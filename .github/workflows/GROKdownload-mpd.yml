@@ -3,7 +3,7 @@ name: Download MPD with Tokens
 on:
   workflow_dispatch:
   #schedule:
-  #  - cron: '0 9 * * *'   # ogni giorno alle 9
+  #  - cron: '0 9 * * *'
 
 jobs:
   download:
@@ -12,23 +12,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js 22 (attuale stabile)
+      - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: 'npm'
 
-      - name: Install dependencies
+      - name: Install Puppeteer
         run: |
-          npm init -y   # crea package.json se non esiste
+          npm init -y
           npm install puppeteer
-          # npm ci   ← sostituito perché non c'era lockfile
+          echo "✅ Puppeteer installato"
 
       - name: Run MPD Downloader
         env:
           TARGET_URL: ${{ secrets.TARGET_URL }}
-          # LOGIN_USER: ${{ secrets.LOGIN_USER }}
-          # LOGIN_PASS: ${{ secrets.LOGIN_PASS }}
         run: node download-mpd.js
 
       - name: Commit & Push MPD files
@@ -36,12 +34,12 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           
-          if ls *.mpd > /dev/null 2>&1; then
+          if ls *.mpd > /dev/null 2>&1 || [ -f mpd-url.txt ]; then
             git add *.mpd mpd-url.txt 2>/dev/null || true
-            git commit -m "Update MPD files - $(date '+%Y-%m-%d %H:%M')" || echo "No new MPD files"
+            git commit -m "Update MPD files - $(date '+%Y-%m-%d %H:%M:%S')" || echo "✅ Nessun nuovo file MPD da committare"
             git push
           else
-            echo "⚠️ Nessun file MPD trovato"
+            echo "⚠️ Nessun file MPD trovato in questa esecuzione"
           fi
         continue-on-error: true
 
