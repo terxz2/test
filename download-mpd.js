@@ -47,7 +47,7 @@ const TARGET_URL = "https://play.discoveryplus.com/channel/watch/f4a4e9af-8af5-5
     });
 
     console.log('⏳ Aspetto 25 secondi per caricare MPD...');
-    await page.waitForTimeout(25000);
+    await new Promise(r => setTimeout(r, 25000));
 
   } catch (err) {
     console.error('Errore navigazione:', err.message);
