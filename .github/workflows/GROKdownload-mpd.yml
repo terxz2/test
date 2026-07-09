@@ -1,9 +1,7 @@
-name: Download MPD with Tokens
+name: Download MPD
 
 on:
   workflow_dispatch:
-  #schedule:
-  #  - cron: '0 9 * * *'
 
 jobs:
   download:
@@ -16,37 +14,32 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: 'npm'
 
       - name: Install Puppeteer
         run: |
+          rm -f package-lock.json yarn.lock
           npm init -y
           npm install puppeteer
-          echo "✅ Puppeteer installato"
 
-      - name: Run MPD Downloader
+      - name: Run Script
         env:
           TARGET_URL: ${{ secrets.TARGET_URL }}
         run: node download-mpd.js
 
-      - name: Commit & Push MPD files
+      - name: Commit MPD
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          
-          if ls *.mpd > /dev/null 2>&1 || [ -f mpd-url.txt ]; then
+          if ls *.mpd 2>/dev/null || [ -f mpd-url.txt ]; then
             git add *.mpd mpd-url.txt 2>/dev/null || true
-            git commit -m "Update MPD files - $(date '+%Y-%m-%d %H:%M:%S')" || echo "✅ Nessun nuovo file MPD da committare"
-            git push
-          else
-            echo "⚠️ Nessun file MPD trovato in questa esecuzione"
+            git commit -m "MPD update $(date)" || echo "No changes"
+            git push || echo "Push failed"
           fi
         continue-on-error: true
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
-          name: mpd-files
+          name: mpd
           path: |
             *.mpd
             mpd-url.txt
