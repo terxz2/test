@@ -2,65 +2,56 @@ const puppeteer = require('puppeteer');
 const fs = require('fs/promises');
 
 (async () => {
-  console.log('🚀 Avvio Puppeteer...');
+  console.log('🚀 Avvio browser...');
 
   const browser = await puppeteer.launch({
     headless: 'new',
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-gpu'
-    ]
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
   });
 
   const page = await browser.newPage();
-  await page.setViewport({ width: 1280, height: 720 });
-
   let mpdSaved = false;
 
-  // Intercettazione richieste
   await page.setRequestInterception(true);
+
   page.on('request', (req) => {
     const url = req.url();
-    if (url.includes('.mpd') && !mpdSaved) {
-      console.log('🔍 MPD URL trovato:', url);
-      fs.writeFile('mpd-url.txt', url + '\n').catch(console.error);
+    if (url.includes('.mpd')) {
+      console.log('🔍 MPD Request:', url);
+      fs.writeFile('mpd-url.txt', url + '\n\n').catch(() => {});
     }
     req.continue();
   });
 
-  // Intercettazione risposte (più affidabile per salvare il contenuto)
   page.on('response', async (res) => {
     const url = res.url();
     if (url.includes('.mpd') && res.status() === 200 && !mpdSaved) {
       try {
         const body = await res.text();
-        const filename = `manifest-${new Date().toISOString().slice(0,19).replace(/:/g,'-')}.mpd`;
+        const filename = `manifest-${Date.now()}.mpd`;
         await fs.writeFile(filename, body);
-        console.log(`✅ MPD salvato: ${filename} (${body.length} bytes)`);
+        console.log(`✅ MPD salvato correttamente: ${filename} (${(body.length/1024).toFixed(1)} KB)`);
         mpdSaved = true;
-      } catch (err) {
-        console.error('❌ Errore salvataggio MPD:', err.message);
+      } catch (e) {
+        console.error('❌ Errore nel salvataggio:', e.message);
       }
     }
   });
 
   try {
-    console.log(`🌐 Navigo su: ${process.env.TARGET_URL}`);
-    await page.goto(process.env.TARGET_URL, { waitUntil: 'networkidle2', timeout: 60000 });
+    console.log(`Navigazione verso: ${process.env.TARGET_URL}`);
+    await page.goto(process.env.TARGET_URL, { 
+      waitUntil: 'networkidle2', 
+      timeout: 60000 
+    });
 
-    // TODO: aggiungi qui login + click play se necessario
-    // await page.waitForSelector('...');
-    // await page.click('...');
-
-    console.log('⏳ Aspetto caricamento MPD (20 secondi)...');
-    await page.waitForTimeout(20000);
+    console.log('⏳ Attendo caricamento del player e MPD (25 secondi)...');
+    await page.waitForTimeout(25000);
 
   } catch (err) {
-    console.error('Errore durante navigazione:', err.message);
+    console.error('Errore navigazione:', err.message);
   }
 
   await browser.close();
-  console.log('✅ Fine esecuzione');
+  console.log('✅ Script terminato');
 })();
