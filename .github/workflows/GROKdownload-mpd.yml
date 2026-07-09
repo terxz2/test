@@ -1,45 +1,33 @@
-name: Download MPD
+name: Download MPD URL
 
 on:
   workflow_dispatch:
+  #schedule:
+  #  - cron: "0 */4 * * *"   # ogni 4 ore
 
 jobs:
-  download:
+  mpd:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Setup Node.js 22
+      - name: Install Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 20
 
-      - name: Install Puppeteer
-        run: |
-          rm -f package-lock.json yarn.lock
-          npm init -y
-          npm install puppeteer
+      - name: Install BotBrowser
+        run: npm install @botbrowser/puppeteer
 
-      - name: Run Script
-        env:
-          TARGET_URL: ${{ secrets.TARGET_URL }}
+      - name: Run script
         run: node download-mpd.js
 
-      - name: Commit MPD
+      - name: Commit MPD URL
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if ls *.mpd 2>/dev/null || [ -f mpd-url.txt ]; then
-            git add *.mpd mpd-url.txt 2>/dev/null || true
-            git commit -m "MPD update $(date)" || echo "No changes"
-            git push || echo "Push failed"
-          fi
-        continue-on-error: true
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: mpd
-          path: |
-            *.mpd
-            mpd-url.txt
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add mpd-url.txt
+          git commit -m "Update MPD URL"
+          git push
