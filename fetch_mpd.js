@@ -17,7 +17,7 @@ const puppeteer = require("puppeteer");
     isMobile: false
   });
 
-  // User-Agent di un device HD-ready
+  // User-Agent HD-ready
   await page.setUserAgent(
     "Mozilla/5.0 (Linux; Android 10; HD-Device) AppleWebKit/537.36 Chrome/120.0.0.0 Mobile Safari/537.36"
   );
@@ -28,10 +28,11 @@ const puppeteer = require("puppeteer");
   page.on("response", async (response) => {
     const url = response.url();
 
-    // Cattura l'MPD finale
-    if (url.endsWith(".mpd")) {
+    // Cattura qualsiasi MPD
+    if (url.includes(".mpd")) {
       try {
         mpdContent = await response.text();
+        console.log("MPD catturato da:", url);
       } catch (e) {
         console.error("Errore nel leggere MPD:", e);
       }
@@ -43,8 +44,8 @@ const puppeteer = require("puppeteer");
     waitUntil: "networkidle2"
   });
 
-  // Sostituisce waitForTimeout
-  await new Promise(resolve => setTimeout(resolve, 8000));
+  // Attendi che il player scarichi l'MPD
+  await new Promise(resolve => setTimeout(resolve, 12000));
 
   if (mpdContent) {
     fs.writeFileSync("main.mpd", mpdContent);
