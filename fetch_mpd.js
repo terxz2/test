@@ -43,8 +43,8 @@ const puppeteer = require("puppeteer");
     waitUntil: "networkidle2"
   });
 
-  // Attendi che il player scarichi l'MPD
-  await page.waitForTimeout(8000);
+  // Sostituisce waitForTimeout
+  await new Promise(resolve => setTimeout(resolve, 8000));
 
   if (mpdContent) {
     fs.writeFileSync("main.mpd", mpdContent);
